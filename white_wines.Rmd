@@ -26,10 +26,11 @@ plot_hist <- function(x_var, x_lab, bin_width){
 }
 
 sample_sp <- function(aes_obj, gg_title){
-  ggplot(sample_df, aes_obj) +
+  ggplot(s_df, aes_obj) +
   geom_point(position=position_jitter(h=0), size=2) +
-  scale_colour_brewer(palette='Set2') +
-  ggtitle(gg_title)
+  scale_colour_brewer(type='seq') +
+  ggtitle(gg_title) +
+  theme_dark()
 }
 
 sp_lm <- function(aes_obj, gg_title){
@@ -51,8 +52,9 @@ box_plot <- function(aes_obj, gg_title, facet_obj){
 bar_plot <- function(aes_obj, gg_title){
   ggplot(df, aes_obj) +
   geom_bar() +
-  scale_fill_brewer(palette='Set2') +
-  ggtitle(gg_title)
+  scale_fill_brewer(type='seq') +
+  ggtitle(gg_title) +
+  theme_dark()
 }
 
 ```
@@ -165,17 +167,20 @@ summary(df$density)
 ```{r density_hist, echo=FALSE}
 plot_hist(df$density, 'Density', 0.0025)
 ```
-```{r density_scatterplot, echo=FALSE}
-sp_lm(aes(x=quality, y=density), 'Quality x Density - Scatterplot')
-```
 
-```{r quality_no_outliers, echo=FALSE}
-ggplot(subset(df, density < quantile(df$density, 0.99)), aes(x=quality, y=density)) +
+```{r quality_no_outliers, echo=FALSE, fig.width=12, results='hide', fig.height=5}
+density_plot1 <- sp_lm(aes(x=quality, y=density), 
+                       'Quality x Density - Scatterplot')
+
+density_plot2 <- ggplot(subset(df, density < quantile(df$density, 0.99)), 
+       aes(x=quality, y=density)) +
   geom_point(alpha=1/10, 
              position=position_jitter(h=0), 
              size=4) +
   geom_smooth(method='lm') +
   ggtitle('Quality x Density (99% quantile)')
+
+grid.arrange(density_plot1, density_plot2, ncol=2)
 ```
 
 ---
@@ -199,24 +204,44 @@ According to wikipedia (https://en.wikipedia.org/wiki/Sweetness_of_wine), and th
 Something I find quite odd is that this dataset contains just one sweet white wine out of 4898 wines, even though a quick search at google tells me that sweet white wines are very common (https://winefolly.com/review/beginners-white-wines-list/).
 
 ```{r residual_sugar_categorical, echo=FALSE}
-df$sweetness <- ifelse(df$residual.sugar <= 4.0, 'DRY',
-               ifelse(df$residual.sugar > 4.0 & df$residual.sugar <= 12.0, 'MEDIUM DRY',
-               ifelse(df$residual.sugar > 12.0 & df$residual.sugar <= 45.0, 'MEDIUM',
-               ifelse(df$residual.sugar > 45.0, 'SWEET', 'NULL'))))
+df$sweetness <- ifelse(df$residual.sugar <= 4.0, 
+                       '1.DRY',
+               ifelse(df$residual.sugar > 4.0 & df$residual.sugar <= 12.0, 
+                      '2.MEDIUM DRY',
+               ifelse(df$residual.sugar > 12.0 & df$residual.sugar <= 45.0, 
+                      '3.MEDIUM',
+               ifelse(df$residual.sugar > 45.0, 
+                      '4.SWEET', 'NULL'))))
 ```
 
 ```{r sweetness_barplot, echo=FALSE}
-bar_plot(aes(x=df$sweetness, fill=df$sweetness), 'Sweetness Frequency Barplot')
+bar_plot(aes(x=df$sweetness, fill=df$sweetness), 
+         'Sweetness Frequency Barplot')
 ```
 
-```{r sweetness_scatterplot, echo=FALSE}
-ggplot(df, aes(x=quality, y=residual.sugar, color=factor(sweetness))) +
+```{r sweetness_scatterplot, echo=FALSE, fig.width=12, results='hide', fig.height=5}
+sweetness_plot1 <-
+  ggplot(df, aes(x=quality, y=residual.sugar, color=factor(sweetness))) +
   geom_point(position=position_jitter(h=0), alpha=1/2, size=1.5) +
-  scale_colour_brewer(palette='Set2') +
-  geom_smooth(method='lm') +
+  scale_colour_brewer(type='seq') +
+  geom_smooth(method = "lm", se = FALSE,size=1)  +
   xlab('Quality') +
   ylab('Residual Sugar') +
-  ggtitle('Quality x Residual Sugar by Sweetness (color)')
+  ggtitle('Quality x Residual Sugar by Sweetness (color)') +
+  theme_dark()
+
+sweetness_plot2 <-
+ggplot(subset(df, residual.sugar < quantile(residual.sugar, 0.99)), 
+       aes(x=quality, y=residual.sugar, color=factor(sweetness))) +
+  geom_point(position=position_jitter(h=0), alpha=1/2, size=1.5) +
+  scale_colour_brewer(type='seq') +
+  geom_smooth(method = "lm", se = FALSE,size=1)  +
+  xlab('Quality') +
+  ylab('Residual Sugar') +
+  ggtitle('Quality x Residual Sugar by Sweetness (color) (99% quantile)') +
+  theme_dark()
+
+grid.arrange(sweetness_plot1, sweetness_plot2, ncol=2)
 ```
 
 ---
@@ -252,7 +277,8 @@ plot_hist(df$total.sulfur.dioxide, 'Total Sulfur Dioxide', 40)
 ```
 
 ```{r total.sulfur.dioxide_scatterplot_1, echo=FALSE}
-ggplot(subset(df, total.sulfur.dioxide <= 50), aes(x=quality, y=total.sulfur.dioxide)) +
+ggplot(subset(df, total.sulfur.dioxide <= 50), 
+       aes(x=quality, y=total.sulfur.dioxide)) +
   geom_point(alpha=1/4, position=position_jitter(h=0), size=4) +
   geom_smooth(method='lm') +
   xlab('Quality') +
@@ -263,7 +289,9 @@ ggplot(subset(df, total.sulfur.dioxide <= 50), aes(x=quality, y=total.sulfur.dio
 #### Total Sulfur Dioxide > 50
 
 ```{r total.sulfur.dioxide_scatterplot_2, echo=FALSE}
-ggplot(subset(df, total.sulfur.dioxide > 50 & total.sulfur.dioxide < quantile(df$total.sulfur.dioxide, 0.95)), aes(x=quality, y=total.sulfur.dioxide)) +
+ggplot(subset(df, total.sulfur.dioxide > 50 
+            & total.sulfur.dioxide < quantile(df$total.sulfur.dioxide, 0.95)), 
+       aes(x=quality, y=total.sulfur.dioxide)) +
   geom_point(alpha=1/10, position=position_jitter(h=0), size=4) +
   geom_smooth(method='lm') +
   xlab('Quality') +
@@ -292,23 +320,24 @@ According to this website (https://winefolly.com/review/understanding-acidity-in
 As said, this classification is informal, so it shouldn't be a critical factor, but rather additional information.
 
 ```{r ph_sc}
-df$acidity <- ifelse(df$pH <= 3.09, 'SWEET',
-                     ifelse(df$pH > 3.09 & df$pH <= 3.5, 'LIGHT-BODIED',
-                     ifelse(df$pH > 3.5, 'REGULAR','NULL')))
+df$acidity <- ifelse(df$pH <= 3.09, '1.SWEET',
+                     ifelse(df$pH > 3.09 & df$pH <= 3.5, '2.LIGHT-BODIED',
+                     ifelse(df$pH > 3.5, '3.REGULAR','NULL')))
 ```
 
 ```{r ph_barplot, echo=FALSE}
 bar_plot(aes(x=df$acidity, fill=df$acidity), 'Acidity Frequency Barplot')
 ```
 
-```{r ph_scatterplot, echo=FALSE}
-ggplot(df, aes(x=quality, y=residual.sugar, color=factor(acidity))) +
+```{r ph_scatterplot, echo=FALSE, fig.width=12, results='hide', fig.height=5}
+ggplot(df, aes(x=quality, y=pH, color=factor(acidity))) +
   geom_point(position=position_jitter(h=0), alpha=1/2, size=1.5) +
-  scale_colour_brewer(palette='Set2') +
+  scale_colour_brewer(type='seq') +
   geom_smooth(method='lm') +
   xlab('Quality') +
   ylab('pH') +
-  ggtitle('Quality x pH by Acidity (color)')
+  ggtitle('Quality x pH by Acidity (color)') +
+  theme_dark()
 ```
 
 ## Sampling
@@ -318,7 +347,7 @@ I sampled 500 rows to reduce overplotting in some specific plots. (Used seed: 20
 ```{r sampling}
 set.seed(20082018)
 df_sample_ids <- sample(df$X, 500)
-sample_df <- subset(df, df$X %in% df_sample_ids)
+s_df <- subset(df, df$X %in% df_sample_ids)
 ```
 
 ---
@@ -330,12 +359,14 @@ sample_df <- subset(df, df$X %in% df_sample_ids)
 The matrix correlation indicates that the correlation between density and alcohol is very big (~ -0.8), and the scatterplot confirms that. More alcohol means less density, which is reasonable because alcohol's density is about 786kg/m^3. In comparison with water, it's 208 kg/m^3 less dense. I also noticed the big variance in the boxplot of quality grade 6 (which is expected because most rows have grade 6), and the dection of several outliers.
 
 ```{r alcohol_density_quality, echo=FALSE}
-sample_sp(aes(x=sample_df$density, y=sample_df$alcohol, color=factor(sample_df$quality)), 
+sample_sp(aes(x=s_df$density, y=s_df$alcohol, 
+              color=factor(s_df$quality)), 
                   '[SAMPLE] Density x Alcohol by Quality (color)')
 ```
 
 ```{r d_a_q_fw, echo=FALSE, warning=FALSE}
-box_plot(aes(x=df$density, y=df$alcohol), 'Density x Alcohol by Quality (facet wrap)', ~df$quality)
+box_plot(aes(x=df$density, y=df$alcohol), 
+         'Density x Alcohol by Quality (facet wrap)', ~df$quality)
 ```
 
 #### Free Sulfur Dioxide x Total Sulfur Dioxide by Quality
@@ -345,11 +376,14 @@ These plots revealed a few outliers and showed a relevant positive correlation b
 
 ```{r free.sulfur.dioxide_total.sulfur.dioxide_quality_outliers, echo=FALSE}
 
-ggplot(subset(sample_df, sample_df$free.sulfur.dioxide < quantile(sample_df$free.sulfur.dioxide, 0.99)), aes(x=free.sulfur.dioxide, y=total.sulfur.dioxide,
-                                                                                         color=factor(quality))) +
+ggplot(subset(s_df, free.sulfur.dioxide < quantile(free.sulfur.dioxide, 0.99)), 
+       aes(x=free.sulfur.dioxide, y=total.sulfur.dioxide,
+              color=factor(quality))) +
     geom_point(position=position_jitter(h=0), size=2) +
-    scale_colour_brewer(palette='Set2') +
-    ggtitle('[SAMPLE] Free Sulfur Dioxide x Total Sulfur Dioxide by Quality (color) 2')
+    scale_colour_brewer(type='seq') +
+    ggtitle(paste('[SAMPLE] Free Sulfur Dioxide x',
+            'Total Sulfur Dioxide by Quality (color)')) +
+    theme_dark()
 ```
 
 ```{r f_t_q_fw, echo=FALSE, warning=FALSE}
@@ -363,8 +397,11 @@ box_plot(aes(x=free.sulfur.dioxide, y=total.sulfur.dioxide),
 These plots shows us the positive correlation between residual sugar and density, as well as the categorical classification of sweetness based on residual sugar.
 
 ```{r d_r_s_1, echo=FALSE}
-sample_sp(aes(x=density, y=residual.sugar, color=factor(sweetness)), 
-                  '[SAMPLE] Density x Residual Sugar by Sweetness (color)')
+ggplot(s_df, aes(x=density, y=residual.sugar, color=factor(sweetness))) +
+  geom_point(position=position_jitter(h=0), size=2) +
+  scale_colour_brewer(type='seq') +
+  ggtitle('[SAMPLE] Density x Residual Sugar by Sweetness (color)') +
+  theme_dark()
 ```
 
 ---
@@ -384,7 +421,7 @@ ggplot(df, aes(x=df$quality, y=df$alcohol)) +
   geom_smooth(method='lm', colour='#888888') +
   xlab('Quality (0 to 10 grade)') +
   ylab('Alcohol (%)') +
-  ggtitle('Quality x Alcohol - Scatterplot') +
+  ggtitle('Quality by Alcohol') +
   theme_minimal()
 ```
 
@@ -397,20 +434,24 @@ The correlation matrix suggested that the variable that could better explain the
 #### Plot(s) 2
 
 ```{r final_plot2, echo=FALSE, fig.width=12, results='hide', fig.height=5}
-plot2_1 <- ggplot(df, aes(x=sweetness, fill=sweetness)) +
+plot2_1 <- 
+  ggplot(df, aes(x=sweetness, fill=sweetness)) +
   geom_bar() +
-  scale_fill_brewer(palette='Set2') +
-  labs(x='Sweetness', y='Frequency', fill='Sweetness')
+  scale_fill_brewer(type='seq') +
+  labs(x='Sweetness', y='Frequency', fill='Sweetness') +
   ggtitle('Sweetness Frequency Barplot') +
-  theme_minimal()
+  theme_dark()
 
-plot2_2 <- ggplot(subset(df, residual.sugar < quantile(df$residual.sugar, 0.95)), aes(x=quality, y=residual.sugar, color=factor(sweetness))) +
+plot2_2 <- 
+  ggplot(subset(df, residual.sugar < quantile(df$residual.sugar, 0.95)), 
+         aes(x=quality, y=residual.sugar, color=factor(sweetness))) +
   geom_point(position=position_jitter(h=0), alpha=1/2, size=1.5) +
-  scale_colour_brewer(palette='Set2') +
+  scale_colour_brewer(type='seq') +
   geom_smooth(method='lm') +
-  labs(x='Quality (0 to 10 grade)', y='Residual Sugar (g/L)', color='Sweetness')
-  ggtitle('Quality x Residual Sugar by Sweetness (color)') +
-  theme_minimal()
+  labs(x='Quality (0 to 10 grade)', y='Residual Sugar (g/L)', 
+       color='Sweetness') +
+  ggtitle('Quality by Residual Sugar and Sweetness') +
+  theme_dark()
 
 grid.arrange(plot2_1, plot2_2, ncol=2)
 ```
@@ -426,16 +467,19 @@ The other one explores residual sugar relation with quality, and we can see that
 #### Plot 3
 
 ```{r final_plot3, echo=FALSE}
-ggplot(subset(sample_df, density < quantile(sample_df$density, 0.99)), aes(x=density, y=alcohol, color=factor(quality))) +
+ggplot(subset(s_df, density < quantile(s_df$density, 0.99)), 
+       aes(x=density, y=alcohol, color=factor(quality))) +
   geom_point(position=position_jitter(h=0), size=2) +
-  scale_colour_brewer(palette='Set2') +
+  scale_colour_brewer(type='seq') +
+  geom_smooth(method = "lm", se=FALSE, size=1)  +
   labs(x='Density (g/L)', y='Alcohol (%)', color='Quality') +
-  ggtitle('[SAMPLE] Density x Alcohol by Quality (color)') +
-  theme_minimal()
+  ggtitle('Density by Alcohol and Quality') +
+  theme_dark()
 ```
 
 #### Comments on Plot 3
 
+I didn't use a regression line here because the plot 
 I'll just quote what I've already said, because I have nothing to add on that.
 
 "The matrix correlation indicates that the correlation between density and alcohol is very big (~ -0.8), and the scatterplot confirms that. More alcohol means less density, which is reasonable because alcohol's density is about 786kg/m^3. In comparison with water, it's 208 kg/m^3 less dense. I also noticed the big variance in the boxplot of quality grade 6 (which is expected because most rows have grade 6), and the dection of several outliers."
@@ -462,16 +506,3 @@ In general, I don't think this dataset can produce a good enough quality predict
 - The dataset misses important chemical and subjective variables that could explain quality's variance better.
 
 ---
-
-  
-  
-  
-  
-  
-
-
-
-
-
-
-
