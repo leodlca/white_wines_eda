@@ -479,7 +479,6 @@ ggplot(subset(s_df, density < quantile(s_df$density, 0.99)),
 
 #### Comments on Plot 3
 
-I didn't use a regression line here because the plot 
 I'll just quote what I've already said, because I have nothing to add on that.
 
 "The matrix correlation indicates that the correlation between density and alcohol is very big (~ -0.8), and the scatterplot confirms that. More alcohol means less density, which is reasonable because alcohol's density is about 786kg/m^3. In comparison with water, it's 208 kg/m^3 less dense. I also noticed the big variance in the boxplot of quality grade 6 (which is expected because most rows have grade 6), and the dection of several outliers."
